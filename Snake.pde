@@ -76,9 +76,7 @@ abstract class Snake {
   /**
    * To be implemented by subclasses to define AI behavior
    */
-   abstract void think(ArrayList<Food> food, ArrayList<Snake> snakes) {
-    // Override in subclasses
-  }
+   abstract void think(ArrayList<Food> food, ArrayList<Snake> snakes);
 
 void drawBody() {
     float sizeMultiplier = map(score, 1, 50, 1, maxMult);
