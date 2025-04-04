@@ -1,5 +1,5 @@
 // Base Snake class
-class Snake {
+abstract class Snake {
   // ============= Properties =============
   // Core properties
   ArrayList<PVector> segments;  // Snake body segments
@@ -76,7 +76,7 @@ class Snake {
   /**
    * To be implemented by subclasses to define AI behavior
    */
-   void think(ArrayList<Food> food, ArrayList<Snake> snakes) {
+   abstract void think(ArrayList<Food> food, ArrayList<Snake> snakes) {
     // Override in subclasses
   }
 
@@ -228,9 +228,6 @@ void drawName() {
       float animX = newHead.x * gridSize + gridSize / 2;
       float animY = newHead.y * gridSize + gridSize / 2;
       collisionAnimations.add(new CollisionAnimation(animX, animY, snakeColor));
-      // Play collision sound
-      //collisionSound.amp(.2);
-      //collisionSound.play();
       die();
       return;
     }
