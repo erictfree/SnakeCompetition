@@ -3,16 +3,13 @@ String[] snakeNames = new String[] {
   "EricFreeman", // repeat for more tests of your Snake
   "HunterSnake",
   "HunterSnake",
-  "HunterSnake",
   "HunterSnake",   // add as many adversaries as you like
 };
 
 Snake spawnNewSnake(int x, int y, String name) {
   switch (name) {
   case "EricFreeman":
-    Snake snake =  new EricFreemanSnake(x, y);  // add your snake here
-    snake.debug = true;  // if you want to track your snake
-    return snake;
+    return  new EricFreemanSnake(x, y);  // add your snake here
   case "HunterSnake":
     return new HunterSnake(x, y);
   default:
