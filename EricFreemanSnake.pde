@@ -1,5 +1,4 @@
-
-// Simple Snake class - just moves around randomly
+// Simple Snake class - moves randomly with no collision checks
 class EricFreemanSnake extends Snake {
   EricFreemanSnake(int x, int y) {
     super(x, y, "EricFreeman");
@@ -7,28 +6,16 @@ class EricFreemanSnake extends Snake {
   }
 
   void think(ArrayList<Food> food, ArrayList<Snake> snakes) {
-    // Just randomly choose a direction
-    float rand = random(1);
-    float dx = 0, dy = 0;
+    // Define all possible directions: right, left, down, up
+    PVector[] possibleDirs = {
+      new PVector(1, 0),   // Right
+      new PVector(-1, 0),  // Left
+      new PVector(0, 1),   // Down
+      new PVector(0, -1)   // Up
+    };
 
-    if (rand < 0.25) {
-      dx = 1;  // Right
-    } else if (rand < 0.5) {
-      dx = -1; // Left
-    } else if (rand < 0.75) {
-      dy = 1;  // Down
-    } else {
-      dy = -1; // Up
-    }
-
-    // Only set direction if it won't cause a collision
-    PVector newPos = new PVector(
-      segments.get(0).x + dx,
-      segments.get(0).y + dy
-      );
-
-    if (!checkWallCollision(newPos) && !checkSnakeCollisions(newPos, snakes)) {
-      setDirection(dx, dy);
-    }
+    // Pick a random direction from all possibilities
+    PVector newDir = possibleDirs[(int)random(possibleDirs.length)];
+    setDirection(newDir.x, newDir.y);
   }
 }

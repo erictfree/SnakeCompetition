@@ -249,7 +249,6 @@ abstract class Snake {
 
     // Prevent 180-degree turns (e.g., moving right then immediately left)
     if (direction.x != -dx || direction.y != -dy) {
-      println("setting direction");
       nextDirection = new PVector(dx, dy);
     } else {
       println("Invalid direction change: (" + dx + ", " + dy + "). Cannot make a 180-degree turn.");
