@@ -207,7 +207,7 @@ PVector findEmptySpot(ArrayList<Snake> snakes, int maxAttempts) {
 
     boolean occupied = false;
     for (Snake snake : snakes) {
-      if (snake.checkSnakeCollisions(spot, snakes)) {
+      if (snake.overlap(spot, snakes)) {
         occupied = true;
         break;
       }

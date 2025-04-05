@@ -1,7 +1,5 @@
 // Base Snake class
 abstract class Snake {
-  // ============= Properties =============
-  // Core properties
   ArrayList<PVector> segments;  // Snake body segments
   String name;                  // Snake's name
   color snakeColor;             // Snake's color
@@ -17,12 +15,13 @@ abstract class Snake {
 
   // Grid properties
   int gridSize;                 // Size of each grid cell
-
-  // ============= Appearance Properties =============
-  boolean showName;             // Whether to show the snake's name
   float nameOffset;             // How far above the snake the name appears
-  boolean debug;                // Whether to show debug visualization
   float maxMult;
+  
+  boolean showName;             // Whether to show the snake's name
+
+  boolean debug = false;
+  boolean speedMeter = false;
 
   // ============= Constructor =============
   /**
@@ -51,15 +50,12 @@ abstract class Snake {
     // Initialize appearance properties
     showName = true;
     nameOffset = 5;
-    debug = false;
     maxMult = 1;
 
     // Create snake segments array and head
     segments = new ArrayList<PVector>();
     segments.add(new PVector(x, y));  // Snake head at index 0
   }
-
-  // ============= Public Methods =============
 
   /**
    * Draws the snake on screen
@@ -69,12 +65,15 @@ abstract class Snake {
     if (debug) {
       drawDebug();
     }
+    if (speedMeter) {
+      drawSpeedMeter();
+    }
     drawBody();
     drawName();
   }
 
   /**
-   * To be implemented by subclasses to define AI behavior
+   * To be implemented by subclasses to define behavior
    */
   abstract void think(ArrayList<Food> food, ArrayList<Snake> snakes);
 
@@ -96,14 +95,25 @@ abstract class Snake {
 
       float s = segmentSize - gap;
       // Draw segment
-      rect(
+      drawSegment(
+        i,
         segment.x * gridSize - offset + gap / 2,
         segment.y * gridSize - offset + gap / 2,
-        s,
-        s,
-        5  // Fixed roundness
+        s
         );
     }
+  }
+
+
+  // override to change look of snake
+  void drawSegment(int index, float x, float y, float size) {
+    rect(
+      x,
+      y,
+      size,
+      size,
+      5  // Fixed roundness
+      );
   }
 
   void drawName() {
@@ -120,35 +130,77 @@ abstract class Snake {
       segments.get(0).y * gridSize - nameOffset - offset);
   }
 
-  private void drawDebug() {
-    // Draw debug circle around the snake
+  // optional, override to change for your snake
+
+  void drawDebug() {
     PVector head = segments.get(0);
-    float sizeMultiplier = map(score, 1, 50, 1, maxMult);
-    float segmentSize = (gridSize - 1) * sizeMultiplier;
-    float offset = (segmentSize - (gridSize - 1)) / 2;
 
-    stroke(255, 140);
-    strokeWeight(.5);
-    fill(255, 80);  // Semi-transparent red
-
+    // Draw a slowly pulsing aura
+    float pulse = sin(frameCount * 0.02) * 0.5 + 0.5;  // Very slow pulse (0.02 for a leisurely pace)
+    float auraSize = map(pulse, 0, 1, gridSize * 10, gridSize * 15);  // Pulse between 10x and 15x grid size
+    float hueShift = map(pulse, 0, 1, 0, 30);  // Shift hue between green (0) and a bluish-green (30)
+    colorMode(HSB, 360, 100, 100);
+    fill(120 + hueShift, 80, 80, 80);  // Green to bluish-green, semi-transparent
+    colorMode(RGB, 255);
+    noStroke();
     circle(
       head.x * gridSize + gridSize / 2,
       head.y * gridSize + gridSize / 2,
-      gridSize * 15
+      auraSize
       );
   }
 
+  // optional
+
+
+  void drawSpeedMeter() {
+    PVector head = segments.get(0);
+
+    // Draw speed meter above the snake's name
+    float sizeMultiplier = map(score, 1, 50, 1, maxMult);
+    float offset = ((gridSize - 1) * sizeMultiplier - (gridSize - 1)) / 2;
+
+    float meterX = head.x * gridSize + gridSize / 2;
+    float meterY = head.y * gridSize - nameOffset - offset - 20;  // Position above the name
+
+    // Map speed to a fill percentage (faster = more filled)
+    float speedPercentage = constrain(map(updateInterval, 50, 200, 1, 0), 0, 1);  // Inverse mapping: lower interval = faster
+    float meterWidth = gridSize * 2;  // Width of the meter
+    float meterHeight = 5;            // Height of the meter
+    float filledWidth = meterWidth * speedPercentage;
+
+    // Background of the meter (empty)
+    stroke(255, 100);
+    fill(50, 100);
+    rect(meterX - meterWidth / 2, meterY - meterHeight / 2, meterWidth, meterHeight);
+
+    // Filled portion of the meter (based on speed)
+    color speedColor = lerpColor(color(255, 0, 0), color(0, 255, 0), speedPercentage);  // Red (slow) to green (fast)
+    fill(speedColor);
+    noStroke();
+    rect(meterX - meterWidth / 2, meterY - meterHeight / 2, filledWidth, meterHeight);
+
+    // Add a label showing the exact speed
+    fill(255);
+    textAlign(CENTER);
+    textSize(10);
+    float fps = 1000/updateInterval;
+    if (fps < 0) {
+      fps = 0;
+    }
+    text( fps + " FPS", meterX, meterY - 10);  // Show speed as frames per second
+  }
 
   // ============= Utiities ====================
 
-  boolean checkWallCollision(PVector pos) {
+  boolean edgeDetect(PVector pos) {
     int w = floor(width / gridSize);
     int h = floor(height / gridSize);
     return pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h;
   }
 
 
-  boolean checkSnakeCollisions(PVector pos, ArrayList<Snake> snakes) {
+  boolean overlap(PVector pos, ArrayList<Snake> snakes) {
     for (Snake snake : snakes) {
       if (!snake.alive) continue;
       for (PVector segment : snake.segments) {
@@ -204,19 +256,17 @@ abstract class Snake {
     }
 
     // Check for collisions
-    if (checkWallCollision(newHead)) {
+    if (edgeDetect(newHead)) {
       die();
       return;
     }
 
     // Check for snake collisions and create animation if collision occurs
-    if (checkSnakeCollisions(newHead, snakes)) {
+    if (overlap(newHead, snakes)) {
       // Create collision animation at the point of impact
       float animX = newHead.x * gridSize + gridSize / 2;
       float animY = newHead.y * gridSize + gridSize / 2;
       collisionAnimations.add(new CollisionAnimation(animX, animY, snakeColor));
-      print("SNAKE COLLISION", snakes.size());
-
       die();
       return;
     }
@@ -288,8 +338,8 @@ abstract class Snake {
   }
 
 
-  private boolean ateFood = false;
-  private void checkFood(ArrayList<Food> food) {
+  boolean ateFood = false;
+  void checkFood(ArrayList<Food> food) {
     ateFood = false;
     for (int i = food.size() - 1; i >= 0; i--) {
       Food f = food.get(i);
