@@ -86,7 +86,7 @@ void draw() {
   } else {
     background(0);
   }
-
+  
   // Draw grid
   drawGrid();
 
@@ -106,7 +106,7 @@ void draw() {
     Snake snake = snakes.get(i);
     if (!snake.isAlive()) {
       // Add snake segments as food
-      ArrayList<PVector> newFoodPositions = snake.die();
+      ArrayList<PVector> newFoodPositions = snake.getFood();
       for (PVector pos : newFoodPositions) {
         Food newFood = new Food((int)pos.x, (int)pos.y);
         newFood.foodColor = snake.getColor();  // Set the food color to match the snake

@@ -76,9 +76,9 @@ abstract class Snake {
   /**
    * To be implemented by subclasses to define AI behavior
    */
-   abstract void think(ArrayList<Food> food, ArrayList<Snake> snakes);
+  abstract void think(ArrayList<Food> food, ArrayList<Snake> snakes);
 
-void drawBody() {
+  void drawBody() {
     float sizeMultiplier = map(score, 1, 50, 1, maxMult);
     float segmentSize = gridSize * sizeMultiplier;
     float gap = 2 * sizeMultiplier;
@@ -93,7 +93,7 @@ void drawBody() {
         lerpColor(snakeColor, color(255), .2) :
         lerpColor(snakeColor, color(0), i % 2 * .08);
       fill(segmentColor);
-      
+
       float s = segmentSize - gap;
       // Draw segment
       rect(
@@ -106,7 +106,7 @@ void drawBody() {
     }
   }
 
-void drawName() {
+  void drawName() {
     if (!showName) return;
 
     float sizeMultiplier = map(score, 1, 50, 1, maxMult);
@@ -140,34 +140,17 @@ void drawName() {
 
 
   // ============= Utiities ====================
-  /**
-   * Checks if a position would collide with walls
-   * @param pos Position to check
-   * @return true if collision would occur
-   */
+
   boolean checkWallCollision(PVector pos) {
     int w = floor(width / gridSize);
     int h = floor(height / gridSize);
     return pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h;
   }
 
-  /**
-   * Checks if a position would collide with any snake
-   * @param pos Position to check
-   * @param snakes List of all snakes
-   * @return true if collision would occur
-   */
-  boolean checkSnakeCollisions(PVector pos, ArrayList<Snake> snakes) {
-    // Check collision with self
-    for (PVector segment : segments) {
-      if (pos.x == segment.x && pos.y == segment.y) {
-        return true;
-      }
-    }
 
-    // Check collision with other snakes
+  boolean checkSnakeCollisions(PVector pos, ArrayList<Snake> snakes) {
     for (Snake snake : snakes) {
-      if (snake == this) continue;
+      if (!snake.alive) continue;
       for (PVector segment : snake.segments) {
         if (pos.x == segment.x && pos.y == segment.y) {
           return true;
@@ -214,6 +197,12 @@ void drawName() {
       head.y + direction.y
       );
 
+
+    if (abs(direction.x) > 1 || abs(direction.y) > 1 || (abs(direction.x) + abs(direction.y) > 1)) {
+      println("Invalid direction in move: (" + direction.x + ", " + direction.y + "). Resetting to (0, 0).");
+      direction = new PVector(0, 0); // Stop movement to prevent errors
+    }
+
     // Check for collisions
     if (checkWallCollision(newHead)) {
       die();
@@ -226,6 +215,8 @@ void drawName() {
       float animX = newHead.x * gridSize + gridSize / 2;
       float animY = newHead.y * gridSize + gridSize / 2;
       collisionAnimations.add(new CollisionAnimation(animX, animY, snakeColor));
+      print("SNAKE COLLISION", snakes.size());
+
       die();
       return;
     }
@@ -239,15 +230,29 @@ void drawName() {
     }
   }
 
-  /**
-   * Changes the snake's direction
-   * @param dx X direction (-1, 0, or 1)
-   * @param dy Y direction (-1, 0, or 1)
-   */
   void setDirection(float dx, float dy) {
-    // Prevent 180-degree turns
+    // Validate direction components: must be -1, 0, or 1
+    if (dx != -1 && dx != 0 && dx != 1) {
+      println("Invalid dx value: " + dx + ". Must be -1, 0, or 1.");
+      return;
+    }
+    if (dy != -1 && dy != 0 && dy != 1) {
+      println("Invalid dy value: " + dy + ". Must be -1, 0, or 1.");
+      return;
+    }
+
+    // Ensure the snake moves in only one direction (not diagonally)
+    if (abs(dx) + abs(dy) > 1) {
+      println("Invalid direction: (" + dx + ", " + dy + "). Cannot move diagonally.");
+      return;
+    }
+
+    // Prevent 180-degree turns (e.g., moving right then immediately left)
     if (direction.x != -dx || direction.y != -dy) {
+      println("setting direction");
       nextDirection = new PVector(dx, dy);
+    } else {
+      println("Invalid direction change: (" + dx + ", " + dy + "). Cannot make a 180-degree turn.");
     }
   }
 
@@ -298,12 +303,11 @@ void drawName() {
     }
   }
 
-  /**
-   * Called when the snake dies, converts segments to food
-   * @return List of positions where food should be created
-   */
-  ArrayList<PVector> die() {
+  void die() {
     alive = false;
+  }
+
+  ArrayList<PVector> getFood() {
     // Convert every other segment to food, starting from the head
     // Only take up to 10 segments from the head
     ArrayList<PVector> foodPositions = new ArrayList<PVector>();
